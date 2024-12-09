@@ -1,4 +1,4 @@
-package org.example.sqlgenerate.createMysql;
+package org.example.sqlgenerate.createSql.model;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Getter;
@@ -43,7 +43,7 @@ public class ImportExcel implements Serializable {
     private String notNull;
 
     /**
-     * 键
+     * 主键
      */
     @ExcelProperty(index = 5)
     private String key;

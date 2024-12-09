@@ -1,1 +1,48 @@
-spring.application.name=sqlgenerate
+server:
+  port: 8081
+spring:
+  application:
+    name: sqlGenerate
+  data:
+    mongodb:
+      uri: mongodb://admin:123456@116.198.233.54:27017/admin
+    redis:
+      database: 0
+      timeout: 10s
+      host: 127.0.0.1
+      port: 6379
+      password: 123456
+      repositories:
+        enabled: false
+      lettuce:
+        pool:
+          max-active: 200
+          max-wait: -1ms
+          max-idle: 10
+          min-idle: 0
+  cloud:
+    api:
+      key: sk-0e30739e8d7a443385a310bec050e223
+    zhipu:
+      api-key: fa8c9813194cb64e4b194aaedcc4dd57.sai8PekG8wQQQl8K
+
+
+
+
+
+springdoc:
+  swagger-ui:
+    # Swagger UI访问路径
+    path: /swagger-ui.html
+    # 开启Swagger UI界面
+    enabled: true
+  api-docs:
+    # 修改api-docs路径
+    path: /v3/api-docs
+    # 开启api-docs
+    enabled: true
+  packages-to-scan: org.example.sqlgenerate.createSql.controller, org.example.sqlgenerate.mongodb.controller, org.example.sqlgenerate.ai.controller # 扫描的controller包
+  # 配置需要生成接口文档的接口路径
+  paths-to-match: /sql/**,/file/**,/ai/**
+
+
