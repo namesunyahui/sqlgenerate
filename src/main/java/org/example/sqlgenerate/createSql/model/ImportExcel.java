@@ -60,5 +60,35 @@ public class ImportExcel implements Serializable {
     @ExcelProperty(index = 7)
     private String remark;
 
+    /**
+     * 索引名称（可选）
+     */
+    @ExcelProperty(index = 8)
+    private String indexName;
+
+    /**
+     * 索引类型（可选）：NORMAL-普通索引, UNIQUE-唯一索引, FULLTEXT-全文索引
+     */
+    @ExcelProperty(index = 9)
+    private String indexType;
+
+    /**
+     * 外键关联表名（可选）
+     */
+    @ExcelProperty(index = 10)
+    private String foreignTable;
+
+    /**
+     * 外键关联列名（可选）
+     */
+    @ExcelProperty(index = 11)
+    private String foreignColumn;
+
+    /**
+     * 是否自增（用于Oracle序列）
+     */
+    @ExcelProperty(index = 12)
+    private String autoIncrement;
+
 }
 

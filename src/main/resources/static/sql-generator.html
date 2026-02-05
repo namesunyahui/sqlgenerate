@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Generator | CodeForge</title>
+    <style>
+        /* ============================================
+           CSS VARIABLES - Industrial Terminal Theme
+           ============================================ */
+        :root {
+            /* Background Colors */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-elevated: #1c2128;
+
+            /* Accent Colors - Syntax Highlighting Inspired */
+            --accent-green: #3fb950;
+            --accent-blue: #58a6ff;
+            --accent-purple: #bc8cff;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --accent-cyan: #39c5cf;
+
+            /* Text Colors */
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+
+            /* Border Colors */
+            --border-default: #30363d;
+            --border-accent: #58a6ff;
+            --border-success: #3fb950;
+            --border-error: #f85149;
+
+            /* Effects */
+            --glow-green: 0 0 20px rgba(63, 185, 80, 0.3);
+            --glow-blue: 0 0 20px rgba(88, 166, 255, 0.3);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --glass-bg: rgba(22, 27, 34, 0.8);
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+        }
+
+        /* ============================================
+           RESET & BASE STYLES
+           ============================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background Grid Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scanline Effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1) 0px,
+                transparent 1px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 3px
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 1;
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: var(--space-xl);
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--border-default);
+            animation: slideDown 0.6s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: var(--glow-blue);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border-default);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-icon:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: var(--glow-blue);
+        }
+
+        /* ============================================
+           MAIN CONTENT - Two Column Layout
+           ============================================ */
+        .main-content {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        /* ============================================
+           LEFT PANEL - Controls
+           ============================================ */
+        .control-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+            animation: slideLeft 0.6s ease 0.1s both;
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* ============================================
+           FILE UPLOAD AREA
+           ============================================ */
+        .upload-area {
+            border: 2px dashed var(--border-default);
+            border-radius: var(--radius-md);
+            padding: var(--space-xl);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(88, 166, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-elevated);
+        }
+
+        .upload-area:hover::before {
+            left: 100%;
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--accent-green);
+            background: rgba(63, 185, 80, 0.1);
+            animation: pulse 1s ease infinite;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-md);
+            opacity: 0.5;
+            transition: all var(--transition-normal);
+        }
+
+        .upload-area:hover .upload-icon {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .upload-text strong {
+            color: var(--accent-blue);
+        }
+
+        .file-info {
+            display: none;
+            padding: var(--space-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            margin-top: var(--space-md);
+        }
+
+        .file-info.active {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .file-icon {
+            font-size: 20px;
+        }
+
+        .file-name {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-remove {
+            color: var(--accent-red);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* ============================================
+           INPUT FIELDS
+           ============================================ */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .input-field {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: var(--glow-blue);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           DATABASE SELECTOR
+           ============================================ */
+        .db-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-sm);
+        }
+
+        .db-option {
+            padding: var(--space-md);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .db-option:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-elevated);
+        }
+
+        .db-option.selected {
+            border-color: var(--accent-green);
+            background: rgba(63, 185, 80, 0.1);
+            box-shadow: var(--glow-green);
+        }
+
+        .db-icon {
+            font-size: 24px;
+            opacity: 0.8;
+        }
+
+        .db-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .db-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .db-ver {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-sm);
+        }
+
+        .btn {
+            padding: var(--space-md) var(--space-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: var(--glow-blue);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(88, 166, 255, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-default);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-full {
+            grid-column: 1 / -1;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ============================================
+           RIGHT PANEL - Output
+           ============================================ */
+        .output-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideRight 0.6s ease 0.2s both;
+            min-height: 600px;
+        }
+
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-default);
+        }
+
+        .output-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .output-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .output-stats {
+            display: flex;
+            gap: var(--space-lg);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .stat-value {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .output-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        /* ============================================
+           CODE EDITOR
+           ============================================ */
+        .code-editor {
+            flex: 1;
+            background: var(--bg-primary);
+            padding: var(--space-lg);
+            overflow: auto;
+            position: relative;
+        }
+
+        .code-content {
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            white-space: pre;
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .sql-keyword { color: var(--accent-purple); }
+        .sql-function { color: var(--accent-blue); }
+        .sql-string { color: var(--accent-green); }
+        .sql-number { color: var(--accent-orange); }
+        .sql-comment { color: var(--text-muted); font-style: italic; }
+        .sql-type { color: var(--accent-cyan); }
+        .sql-operator { color: var(--accent-red); }
+
+        /* Line Numbers */
+        .code-wrapper {
+            display: flex;
+            position: relative;
+        }
+
+        .line-numbers {
+            padding-right: var(--space-lg);
+            color: var(--text-muted);
+            user-select: none;
+            text-align: right;
+            min-width: 40px;
+        }
+
+        .code-content {
+            flex: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            gap: var(--space-md);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            font-size: 14px;
+        }
+
+        /* ============================================
+           LOADING STATE
+           ============================================ */
+        .loading-state {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            padding: var(--space-xl);
+        }
+
+        .loading-state.active {
+            display: flex;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-default);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           TOAST NOTIFICATIONS
+           ============================================ */
+        .toast-container {
+            position: fixed;
+            bottom: var(--space-lg);
+            right: var(--space-lg);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .toast {
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            min-width: 300px;
+            animation: toastSlide 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: var(--accent-green);
+        }
+
+        .toast.error {
+            border-color: var(--accent-red);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast.success .toast-icon {
+            color: var(--accent-green);
+        }
+
+        .toast.error .toast-icon {
+            color: var(--accent-red);
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .output-panel {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--space-md);
+            }
+
+            .db-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: var(--space-md);
+                align-items: flex-start;
+            }
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-default);
+            border-radius: var(--radius-sm);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">SQL Generator</div>
+                <span class="logo-badge">v2.0</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="downloadTemplate()" title="下载模板">
+                    📥
+                </button>
+                <button class="btn-icon" onclick="showHelp()" title="帮助">
+                    ❓
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Controls -->
+            <div class="control-panel">
+                <!-- File Upload -->
+                <div class="panel-section">
+                    <span class="section-label">Step 1: Upload Excel</span>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">
+                            <strong>Click to upload</strong> or drag & drop<br>
+                            <small>.xlsx file with table structure</small>
+                        </div>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                    </div>
+                    <div class="file-info" id="fileInfo">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-remove" onclick="clearFile()">×</span>
+                    </div>
+                </div>
+
+                <!-- Database Selection -->
+                <div class="panel-section">
+                    <span class="section-label">Step 2: Select Database</span>
+                    <div class="db-selector">
+                        <div class="db-option selected" data-db="mysql" onclick="selectDatabase('mysql')">
+                            <span class="db-icon">🐬</span>
+                            <div class="db-info">
+                                <span class="db-name">MySQL</span>
+                                <span class="db-ver">8.0+</span>
+                            </div>
+                        </div>
+                        <div class="db-option" data-db="oracle" onclick="selectDatabase('oracle')">
+                            <span class="db-icon">🔴</span>
+                            <div class="db-info">
+                                <span class="db-name">Oracle</span>
+                                <span class="db-ver">11g+</span>
+                            </div>
+                        </div>
+                        <div class="db-option" data-db="postgresql" onclick="selectDatabase('postgresql')">
+                            <span class="db-icon">🐘</span>
+                            <div class="db-info">
+                                <span class="db-name">PostgreSQL</span>
+                                <span class="db-ver">12+</span>
+                            </div>
+                        </div>
+                        <div class="db-option" data-db="sqlserver" onclick="selectDatabase('sqlserver')">
+                            <span class="db-icon">🔷</span>
+                            <div class="db-info">
+                                <span class="db-name">SQL Server</span>
+                                <span class="db-ver">2017+</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Info -->
+                <div class="panel-section">
+                    <span class="section-label">Step 3: Table Information</span>
+                    <div class="input-group">
+                        <label class="input-label">Table Name</label>
+                        <input type="text" class="input-field" id="tableName" placeholder="e.g., t_user">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Table Remark</label>
+                        <input type="text" class="input-field" id="tableRemark" placeholder="e.g., User table">
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="panel-section">
+                    <span class="section-label">Step 4: Generate</span>
+                    <div class="btn-group">
+                        <button class="btn btn-primary btn-full" onclick="generateSQL()" id="generateBtn">
+                            <span>⚡</span> Generate SQL
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearAll()">
+                            <span>🔄</span> Reset
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadTemplate()">
+                            <span>📥</span> Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Output -->
+            <div class="output-panel">
+                <div class="output-header">
+                    <div class="output-title">
+                        <span class="output-label">Generated SQL</span>
+                    </div>
+                    <div class="output-stats" id="outputStats" style="display: none;">
+                        <span class="stat-item">
+                            <span>Lines:</span>
+                            <span class="stat-value" id="lineCount">0</span>
+                        </span>
+                        <span class="stat-item">
+                            <span>Tables:</span>
+                            <span class="stat-value" id="tableCount">0</span>
+                        </span>
+                        <span class="stat-item">
+                            <span>Database:</span>
+                            <span class="stat-value" id="dbType">MySQL</span>
+                        </span>
+                    </div>
+                    <div class="output-actions">
+                        <button class="btn-icon" onclick="copySQL()" title="Copy to clipboard" id="copyBtn" style="display: none;">
+                            📋
+                        </button>
+                        <button class="btn-icon" onclick="downloadSQL()" title="Download .sql file" id="downloadBtn" style="display: none;">
+                            💾
+                        </button>
+                    </div>
+                </div>
+
+                <div class="code-editor" id="codeEditor">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">📝</div>
+                        <div class="empty-text">Upload an Excel file and click Generate</div>
+                    </div>
+
+                    <div class="loading-state" id="loadingState">
+                        <div class="loader"></div>
+                        <div class="loading-text">Generating SQL...</div>
+                    </div>
+
+                    <div class="code-wrapper" id="codeWrapper" style="display: none;">
+                        <div class="line-numbers" id="lineNumbers"></div>
+                        <div class="code-content" id="codeContent"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        let selectedFile = null;
+        let selectedDatabase = 'mysql';
+        let generatedSQL = '';
+
+        // ============================================
+        // FILE UPLOAD HANDLING
+        // ============================================
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                showToast('Please upload a valid Excel file (.xlsx or .xls)', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.add('active');
+            uploadArea.style.display = 'none';
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            uploadArea.style.display = 'block';
+        }
+
+        // ============================================
+        // DATABASE SELECTION
+        // ============================================
+        function selectDatabase(db) {
+            selectedDatabase = db;
+            document.querySelectorAll('.db-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.db === db) {
+                    option.classList.add('selected');
+                }
+            });
+        }
+
+        // ============================================
+        // SQL GENERATION
+        // ============================================
+        async function generateSQL() {
+            const tableName = document.getElementById('tableName').value.trim();
+            const tableRemark = document.getElementById('tableRemark').value.trim();
+
+            // Validation
+            if (!selectedFile) {
+                showToast('Please upload an Excel file first', 'error');
+                return;
+            }
+
+            if (!tableName) {
+                showToast('Please enter a table name', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('codeWrapper').style.display = 'none';
+            document.getElementById('loadingState').classList.add('active');
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('tableName', tableName);
+                formData.append('tableRemark', tableRemark);
+                formData.append('database', selectedDatabase);
+
+                // API call
+                const response = await fetch('/sql/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate SQL');
+                }
+
+                const sql = await response.text();
+                generatedSQL = sql;
+
+                // Display result
+                displaySQL(sql);
+                showToast('SQL generated successfully!', 'success');
+
+                // Show action buttons
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('downloadBtn').style.display = 'flex';
+                document.getElementById('outputStats').style.display = 'flex';
+
+                // Update stats
+                document.getElementById('lineCount').textContent = sql.split('\n').length;
+                document.getElementById('tableCount').textContent = '1';
+                document.getElementById('dbType').textContent = selectedDatabase.toUpperCase();
+
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+                document.getElementById('emptyState').style.display = 'flex';
+            } finally {
+                document.getElementById('loadingState').classList.remove('active');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        // ============================================
+        // DISPLAY SQL WITH SYNTAX HIGHLIGHTING
+        // ============================================
+        function displaySQL(sql) {
+            const codeContent = document.getElementById('codeContent');
+            const lineNumbers = document.getElementById('lineNumbers');
+
+            // Syntax highlighting
+            const highlighted = highlightSQL(sql);
+            codeContent.innerHTML = highlighted;
+
+            // Line numbers
+            const lines = sql.split('\n');
+            lineNumbers.innerHTML = lines.map((_, i) => i + 1).join('<br>');
+
+            document.getElementById('codeWrapper').style.display = 'flex';
+        }
+
+        function highlightSQL(sql) {
+            // Escape HTML
+            let highlighted = sql
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Comments
+            highlighted = highlighted.replace(/(--[^\n]*)/g, '<span class="sql-comment">$1</span>');
+
+            // Strings
+            highlighted = highlighted.replace(/('([^']*)')/g, '<span class="sql-string">$1</span>');
+
+            // Keywords
+            const keywords = ['SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'ALTER', 'DROP', 'INDEX', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'UNIQUE', 'CONSTRAINT', 'DEFAULT', 'NOT', 'NULL', 'COMMENT', 'ON', 'COLUMN', 'ADD', 'CASCADE', 'RESTRICT', 'NO', 'ACTION', 'IF', 'EXISTS', 'OR', 'REPLACE', 'TRIGGER', 'BEFORE', 'EACH', 'ROW', 'BEGIN', 'END', 'SEQUENCE', 'START', 'WITH', 'INCREMENT', 'BY', 'NOCACHE', 'NOCYCLE', 'NEXTVAL', 'INTO', 'THEN', 'ELSE', 'DECLARE', 'EXEC', 'sp_addextendedproperty', 'RETURN'];
+
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                highlighted = highlighted.replace(regex, '<span class="sql-keyword">$&</span>');
+            });
+
+            // Data types
+            const types = ['INT', 'INTEGER', 'BIGINT', 'SMALLINT', 'TINYINT', 'DECIMAL', 'NUMERIC', 'VARCHAR', 'CHAR', 'TEXT', 'DATE', 'DATETIME', 'TIMESTAMP', 'BLOB', 'CLOB', 'BOOLEAN', 'FLOAT', 'DOUBLE', 'JSON', 'BYTEA', 'REAL', 'BIT', 'VARCHAR2', 'NUMBER', 'NCHAR', 'NVARCHAR', 'DATETIME2'];
+
+            types.forEach(type => {
+                const regex = new RegExp(`\\b${type}\\b`, 'gi');
+                highlighted = highlighted.replace(regex, '<span class="sql-type">$&</span>');
+            });
+
+            // Functions
+            const functions = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'CONCAT', 'COALESCE', 'NULLIF', 'CAST', 'CONVERT'];
+
+            functions.forEach(func => {
+                const regex = new RegExp(`\\b${func}\\b`, 'gi');
+                highlighted = highlighted.replace(regex, '<span class="sql-function">$&</span>');
+            });
+
+            // Numbers
+            highlighted = highlighted.replace(/\b(\d+)\b/g, '<span class="sql-number">$1</span>');
+
+            return highlighted;
+        }
+
+        // ============================================
+        // COPY TO CLIPBOARD
+        // ============================================
+        async function copySQL() {
+            if (!generatedSQL) return;
+
+            try {
+                await navigator.clipboard.writeText(generatedSQL);
+                showToast('Copied to clipboard!', 'success');
+            } catch (error) {
+                showToast('Failed to copy', 'error');
+            }
+        }
+
+        // ============================================
+        // DOWNLOAD SQL
+        // ============================================
+        function downloadSQL() {
+            if (!generatedSQL) return;
+
+            const blob = new Blob([generatedSQL], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${document.getElementById('tableName').value || 'table'}.sql`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('SQL file downloaded!', 'success');
+        }
+
+        // ============================================
+        // DOWNLOAD TEMPLATE
+        // ============================================
+        async function downloadTemplate() {
+            try {
+                const response = await fetch('/sql/download/template');
+                if (!response.ok) throw new Error('Failed to download template');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sql_template.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast('Template downloaded!', 'success');
+            } catch (error) {
+                showToast('Failed to download template', 'error');
+            }
+        }
+
+        // ============================================
+        // CLEAR ALL
+        // ============================================
+        function clearAll() {
+            clearFile();
+            document.getElementById('tableName').value = '';
+            document.getElementById('tableRemark').value = '';
+            document.getElementById('codeWrapper').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('outputStats').style.display = 'none';
+            generatedSQL = '';
+            selectDatabase('mysql');
+        }
+
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${type === 'success' ? '✓' : '✕'}</span>
+                <span class="toast-message">${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ============================================
+        // HELP
+        // ============================================
+        function showHelp() {
+            showToast('Download template, fill in table structure, then upload', 'success');
+        }
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter to generate
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                generateSQL();
+            }
+            // Ctrl/Cmd + Shift + C to copy
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                copySQL();
+            }
+        });
+    </script>
+</body>
+</html>
