@@ -51,12 +51,6 @@ public class PostgreSqlStrategy implements DatabaseSqlStrategy {
                 sqlBuilder.append(" ").append(constraints);
             }
 
-            // 列注释
-            if (StringUtils.isNotEmpty(column.getRemark())) {
-                String remark = SqlValidator.escapeStringLiteral(column.getRemark().replace("\n", " "));
-                sqlBuilder.append(" -- ").append(remark);
-            }
-
             sqlBuilder.append(",\n");
 
             // 收集主键
@@ -118,11 +112,6 @@ public class PostgreSqlStrategy implements DatabaseSqlStrategy {
         definition.append(quoteIdentifier(column.getFiledName())).append(" ");
         definition.append(buildDataTypeDefinition(column));
         definition.append(buildColumnConstraints(column));
-
-        if (StringUtils.isNotEmpty(column.getRemark())) {
-            String remark = SqlValidator.escapeStringLiteral(column.getRemark().replace("\n", " "));
-            definition.append(" -- ").append(remark);
-        }
 
         return definition.toString();
     }
