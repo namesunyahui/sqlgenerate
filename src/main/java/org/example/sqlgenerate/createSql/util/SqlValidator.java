@@ -66,11 +66,12 @@ public class SqlValidator {
             throw SqlGenerationException.validation("表名长度不能超过 " + MAX_TABLE_NAME_LENGTH + " 个字符");
         }
 
-        // 检查是否包含SQL关键字
+        // 检查是否是完全匹配SQL关键字（不拒绝复合词如 create_time, user_info）
         String upperTableName = tableName.toUpperCase();
         for (String keyword : SQL_KEYWORDS) {
-            if (upperTableName.contains(keyword)) {
-                throw SqlGenerationException.sqlInjection("表名包含SQL关键字: " + tableName);
+            // 只拒绝完全匹配关键字的情况，允许关键字作为复合词的一部分
+            if (upperTableName.equals(keyword)) {
+                throw SqlGenerationException.sqlInjection("表名不能是SQL关键字: " + tableName);
             }
         }
 
@@ -100,11 +101,12 @@ public class SqlValidator {
             throw SqlGenerationException.validation("字段名长度不能超过 " + MAX_COLUMN_NAME_LENGTH + " 个字符");
         }
 
-        // 检查是否包含SQL关键字
+        // 检查是否是完全匹配SQL关键字（不拒绝复合词如 create_time, user_info）
         String upperColumnName = columnName.toUpperCase();
         for (String keyword : SQL_KEYWORDS) {
-            if (upperColumnName.contains(keyword)) {
-                throw SqlGenerationException.sqlInjection("字段名包含SQL关键字: " + columnName);
+            // 只拒绝完全匹配关键字的情况，允许关键字作为复合词的一部分
+            if (upperColumnName.equals(keyword)) {
+                throw SqlGenerationException.sqlInjection("字段名不能是SQL关键字: " + columnName);
             }
         }
 
