@@ -3,8 +3,16 @@ server:
 
 spring:
   application:
-    name: sqlgenerate
+    name: codeforge
 
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# SpringDoc OpenAPI 配置
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -12,5 +20,7 @@ springdoc:
   api-docs:
     path: /v3/api-docs
     enabled: true
-  packages-to-scan: org.example.sqlgenerate.createSql.controller
-  paths-to-match: /sql/**
+  # 扫描所有 controller 包
+  packages-to-scan: org.example.sqlgenerate.*.controller
+  # 匹配所有 API 路径
+  paths-to-match: /api/**

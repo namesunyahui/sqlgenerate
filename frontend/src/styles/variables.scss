@@ -1,0 +1,87 @@
+/**
+ * 工业终端风格 - CSS 变量
+ * 复用 sql-generator.html 的配色方案
+ */
+
+:root {
+  // 背景色
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-elevated: #30363d;
+
+  // 边框色
+  --border-default: #30363d;
+  --border-muted: #21262d;
+  --border-accent: #58a6ff;
+
+  // 文本色
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --text-accent: #58a6ff;
+
+  // 强调色
+  --accent-green: #3fb950;
+  --accent-blue: #58a6ff;
+  --accent-purple: #bc8cff;
+  --accent-orange: #d29922;
+  --accent-red: #f85149;
+
+  // 语法高亮
+  --syntax-keyword: #ff7b72;
+  --syntax-string: #a5d6ff;
+  --syntax-number: #79c0ff;
+  --syntax-comment: #8b949e;
+  --syntax-function: #d2a8ff;
+  --syntax-variable: #ffa657;
+
+  // 阴影
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+
+  // 间距
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  // 圆角
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  // 过渡
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+// Element Plus 主题覆盖（暗色主题）
+:root {
+  --el-color-primary: var(--accent-blue);
+  --el-color-success: var(--accent-green);
+  --el-color-warning: var(--accent-orange);
+  --el-color-danger: var(--accent-red);
+  --el-color-error: var(--accent-red);
+
+  --el-bg-color: var(--bg-primary);
+  --el-bg-color-page: var(--bg-secondary);
+  --el-bg-color-overlay: var(--bg-elevated);
+
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-muted);
+
+  --el-border-color: var(--border-default);
+  --el-border-color-light: var(--border-muted);
+
+  --el-fill-color-blank: var(--bg-secondary);
+  --el-fill-color-light: var(--bg-tertiary);
+  --el-fill-color-lighter: var(--bg-elevated);
+
+  --el-box-shadow: var(--shadow-md);
+  --el-box-shadow-light: var(--shadow-sm);
+  --el-box-shadow-dark: var(--shadow-lg);
+}

@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(mvn test:*)",
-      "Bash(mvn test-compile exec:java:*)"
+      "Bash(mvn test-compile exec:java:*)",
+      "Bash(git push:*)",
+      "Bash(taskkill:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: 添加README文档 + 优化Excel注解和验证逻辑\n\n- 添加项目 README 文档，包含功能介绍、使用说明和 API 文档\n- 优化 ImportExcel 的 ExcelProperty 注解，添加列名方便识别\n- 改进 SqlValidator 的关键字验证逻辑，允许复合词（如 create_time、user_info）\n- 调整服务端口从 8081 改为 8080\n- 添加 favicon 避免 404 错误\n- 移除 ojdbc6.jar（依赖已在 pom.xml 中管理）\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git fetch:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev)"
     ]
   }
 }

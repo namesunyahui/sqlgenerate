@@ -12,7 +12,7 @@
     <artifactId>sqlgenerate</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>sqlgenerate</name>
-    <description>SQL生成工具 - 根据Excel生成MySQL和Oracle的建表语句</description>
+    <description>CodeForge - 多功能开发工具平台</description>
 
     <properties>
         <java.version>17</java.version>
@@ -58,6 +58,27 @@
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.4.0</version>
+        </dependency>
+
+        <!-- Hutool - 国产工具库 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.28</version>
+        </dependency>
+
+        <!-- FastJSON2 - JSON处理 -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.50</version>
+        </dependency>
+
+        <!-- Apache Commons Codec - 编解码 -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.17.1</version>
         </dependency>
 
         <!-- 测试 -->

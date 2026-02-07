@@ -8,6 +8,10 @@ public class SqlgenerateApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(SqlgenerateApplication.class, args);
+        System.out.println("访问链接:"+"http://localhost:8080/sql-generator.html");
     }
 
 }
+
+
+
