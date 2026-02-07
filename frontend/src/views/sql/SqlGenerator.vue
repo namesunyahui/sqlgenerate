@@ -1,257 +1,258 @@
 <template>
-  <div class="sql-generator-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h2 class="page-title">
-        <el-icon><Tickets /></el-icon>
-        SQL 生成器
-      </h2>
-      <p class="page-desc">根据 Excel 表格定义生成建表 SQL，支持多种数据库</p>
+  <div class="sql-generator">
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-scanlines"></div>
+
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">
+          <div class="logo-icon">⚡</div>
+          <div class="logo-text">SQL Generator</div>
+          <span class="logo-badge">v2.0</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-icon" @click="downloadTemplate" title="下载模板">
+            📥
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Left Panel - Controls -->
+        <div class="control-panel">
+          <!-- Step 1: Upload -->
+          <div class="panel-section">
+            <span class="section-label">Step 1: Upload Excel</span>
+            <div
+              class="upload-area"
+              :class="{ 'drag-over': isDragover, 'has-file': uploadedFile }"
+              @drop.prevent="handleDrop"
+              @dragover.prevent="isDragover = true"
+              @dragleave.prevent="isDragover = false"
+              @click="selectFile"
+            >
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept=".xlsx,.xls"
+                style="display: none"
+                @change="handleFileChange"
+              />
+
+              <div v-if="!uploadedFile" class="upload-placeholder">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">
+                  <strong>Click to upload</strong> or drag & drop<br>
+                  <small>.xlsx file with table structure</small>
+                </div>
+              </div>
+
+              <div v-else class="file-info">
+                <span class="file-icon">📄</span>
+                <span class="file-name">{{ uploadedFile.name }}</span>
+                <span class="file-remove" @click.stop="removeFile">×</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Database Selection -->
+          <div class="panel-section">
+            <span class="section-label">Step 2: Select Database</span>
+            <div class="db-selector">
+              <div
+                v-for="db in databases"
+                :key="db.value"
+                class="db-option"
+                :class="{ selected: form.database === db.value }"
+                @click="form.database = db.value"
+              >
+                <span class="db-icon">{{ db.icon }}</span>
+                <div class="db-info">
+                  <span class="db-name">{{ db.name }}</span>
+                  <span class="db-ver">{{ db.version }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Table Info -->
+          <div class="panel-section">
+            <span class="section-label">Step 3: Table Information</span>
+            <div class="input-group">
+              <label class="input-label">Table Name</label>
+              <input
+                v-model="form.tableName"
+                class="input-field"
+                placeholder="e.g., t_user"
+              >
+            </div>
+            <div class="input-group">
+              <label class="input-label">Table Remark</label>
+              <input
+                v-model="form.tableRemark"
+                class="input-field"
+                placeholder="e.g., User table"
+              >
+            </div>
+          </div>
+
+          <!-- Step 4: Generate -->
+          <div class="panel-section">
+            <span class="section-label">Step 4: Generate</span>
+            <div class="btn-group">
+              <button
+                class="btn btn-primary btn-full"
+                :disabled="!canGenerate || loading"
+                @click="generateSql"
+              >
+                <span v-if="!loading">⚡ Generate SQL</span>
+                <span v-else>⚡ Generating...</span>
+              </button>
+              <button class="btn btn-secondary" @click="reset">
+                🔄 Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel - Output -->
+        <div class="output-panel">
+          <div class="output-header">
+            <div class="output-title">
+              <span class="output-label">Generated SQL</span>
+            </div>
+            <div class="output-stats" v-if="generatedSql">
+              <span class="stat-item">
+                <span>Lines:</span>
+                <span class="stat-value">{{ lineCount }}</span>
+              </span>
+              <span class="stat-item">
+                <span>Database:</span>
+                <span class="stat-value">{{ form.database.toUpperCase() }}</span>
+              </span>
+            </div>
+            <div class="output-actions" v-if="generatedSql">
+              <button class="btn-icon" @click="copySql" title="Copy">
+                📋
+              </button>
+              <button class="btn-icon" @click="downloadSql" title="Download">
+                💾
+              </button>
+            </div>
+          </div>
+
+          <div class="code-editor">
+            <!-- Empty State -->
+            <div v-if="!generatedSql && !loading" class="empty-state">
+              <div class="empty-icon">📝</div>
+              <div class="empty-text">Upload an Excel file and click Generate</div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading" class="loading-state">
+              <div class="loader"></div>
+              <div class="loading-text">Generating SQL...</div>
+            </div>
+
+            <!-- Code Display -->
+            <div v-if="generatedSql" class="code-wrapper">
+              <div class="line-numbers">
+                <span v-for="n in lineCount" :key="n">{{ n }}</span>
+              </div>
+              <div class="code-content" v-html="highlightedSql"></div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
-    <el-row :gutter="24">
-      <!-- 左侧：输入区域 -->
-      <el-col :span="12">
-        <el-card shadow="never" class="config-card">
-          <template #header>
-            <div class="card-header">
-              <span>配置参数</span>
-              <el-button type="primary" link @click="downloadTemplate">
-                <el-icon><Download /></el-icon>
-                下载模板
-              </el-button>
-            </div>
-          </template>
-
-          <el-form :model="form" label-width="100px" label-position="left">
-            <!-- 数据库选择 -->
-            <el-form-item label="数据库类型">
-              <el-select v-model="form.database" placeholder="请选择数据库" style="width: 100%">
-                <el-option label="MySQL" value="mysql">
-                  <div class="db-option">
-                    <el-icon><Coin /></el-icon>
-                    <span>MySQL</span>
-                  </div>
-                </el-option>
-                <el-option label="Oracle" value="oracle">
-                  <div class="db-option">
-                    <el-icon><Files /></el-icon>
-                    <span>Oracle</span>
-                  </div>
-                </el-option>
-                <el-option label="PostgreSQL" value="postgresql">
-                  <div class="db-option">
-                    <el-icon><Coin /></el-icon>
-                    <span>PostgreSQL</span>
-                  </div>
-                </el-option>
-                <el-option label="SQL Server" value="sqlserver">
-                  <div class="db-option">
-                    <el-icon><Coin /></el-icon>
-                    <span>SQL Server</span>
-                  </div>
-                </el-option>
-              </el-select>
-            </el-form-item>
-
-            <!-- 表名 -->
-            <el-form-item label="表名">
-              <el-input
-                v-model="form.tableName"
-                placeholder="请输入表名，如：t_user"
-                clearable
-              >
-                <template #prefix>
-                  <el-icon><Notebook /></el-icon>
-                </template>
-              </el-input>
-            </el-form-item>
-
-            <!-- 表注释 -->
-            <el-form-item label="表注释">
-              <el-input
-                v-model="form.tableRemark"
-                type="textarea"
-                :rows="2"
-                placeholder="请输入表注释，如：用户表"
-                clearable
-              />
-            </el-form-item>
-
-            <!-- 文件上传 -->
-            <el-form-item label="Excel 文件">
-              <div
-                class="upload-area"
-                :class="{ 'is-dragover': isDragover, 'has-file': uploadedFile }"
-                @drop.prevent="handleDrop"
-                @dragover.prevent="isDragover = true"
-                @dragleave.prevent="isDragover = false"
-                @click="selectFile"
-              >
-                <input
-                  ref="fileInputRef"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  style="display: none"
-                  @change="handleFileChange"
-                />
-
-                <div v-if="!uploadedFile" class="upload-placeholder">
-                  <el-icon class="upload-icon"><UploadFilled /></el-icon>
-                  <div class="upload-text">
-                    <p>点击或拖拽文件到此处上传</p>
-                    <p class="upload-hint">支持 .xlsx、.xls 格式</p>
-                  </div>
-                </div>
-
-                <div v-else class="file-info">
-                  <el-icon class="file-icon"><Document /></el-icon>
-                  <div class="file-details">
-                    <p class="file-name">{{ uploadedFile.name }}</p>
-                    <p class="file-size">{{ formatFileSize(uploadedFile.size) }}</p>
-                  </div>
-                  <el-button type="danger" link @click.stop="removeFile">
-                    <el-icon><Delete /></el-icon>
-                  </el-button>
-                </div>
-              </div>
-            </el-form-item>
-
-            <!-- 生成按钮 -->
-            <el-form-item>
-              <el-button
-                type="primary"
-                :loading="loading"
-                :disabled="!canGenerate"
-                @click="generateSql"
-                style="width: 100%"
-              >
-                <el-icon><MagicStick /></el-icon>
-                {{ loading ? '生成中...' : '生成 SQL' }}
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-col>
-
-      <!-- 右侧：结果区域 -->
-      <el-col :span="12">
-        <el-card shadow="never" class="result-card">
-          <template #header>
-            <div class="card-header">
-              <span>生成结果</span>
-              <div class="header-actions" v-if="generatedSql">
-                <el-button type="primary" link @click="copySql">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-                <el-button type="primary" link @click="downloadSql">
-                  <el-icon><Download /></el-icon>
-                  下载
-                </el-button>
-              </div>
-            </div>
-          </template>
-
-          <div class="sql-result" :class="{ 'is-empty': !generatedSql }">
-            <div v-if="!generatedSql" class="empty-state">
-              <el-icon class="empty-icon"><DocumentCopy /></el-icon>
-              <p>配置参数并上传文件后生成 SQL</p>
-            </div>
-
-            <pre
-              v-else
-              class="sql-content"
-              v-html="highlightSql(generatedSql)"
-            ></pre>
-          </div>
-        </el-card>
-
-        <!-- 使用说明 -->
-        <el-card shadow="never" class="help-card">
-          <template #header>
-            <div class="card-header">
-              <el-icon><QuestionFilled /></el-icon>
-              <span>使用说明</span>
-            </div>
-          </template>
-          <div class="help-content">
-            <h4>Excel 模板格式：</h4>
-            <ul>
-              <li>字段名 | 类型 | 长度 | 非空 | 主键 | 默认值 | 备注</li>
-            </ul>
-            <h4>支持的数据类型：</h4>
-            <ul>
-              <li>整数：TINYINT, SMALLINT, INT, BIGINT</li>
-              <li>浮点：FLOAT, DOUBLE, DECIMAL</li>
-              <li>字符串：CHAR, VARCHAR, TEXT</li>
-              <li>日期：DATE, DATETIME, TIMESTAMP</li>
-              <li>其他：BOOLEAN, JSON, BLOB</li>
-            </ul>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- Toast -->
+    <Transition name="toast">
+      <div v-if="toast.show" :class="['toast', toast.type]">
+        <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '✕' }}</span>
+        <span class="toast-message">{{ toast.message }}</span>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import {
-  Tickets, Download, Coin, Files, Notebook, UploadFilled,
-  Document, Delete, MagicStick, CopyDocument, DocumentCopy,
-  QuestionFilled
-} from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { sqlApi } from '@/api/sql'
 
-// 表单数据
+// Form
 const form = ref({
   database: 'mysql',
   tableName: '',
   tableRemark: ''
 })
 
-// 上传状态
+// Database options
+const databases = [
+  { value: 'mysql', name: 'MySQL', icon: '🐬', version: '8.0+' },
+  { value: 'oracle', name: 'Oracle', icon: '🔴', version: '11g+' },
+  { value: 'postgresql', name: 'PostgreSQL', icon: '🐘', version: '12+' },
+  { value: 'sqlserver', name: 'SQL Server', icon: '🔷', version: '2017+' }
+]
+
+// File upload
 const uploadedFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement>()
 const isDragover = ref(false)
 
-// 生成状态
+// Generation
 const loading = ref(false)
 const generatedSql = ref('')
 
-// 是否可以生成
+// Toast
+const toast = ref({ show: false, message: '', type: 'success' })
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+// Computed
 const canGenerate = computed(() => {
   return form.value.tableName && uploadedFile.value
 })
 
-// 选择文件
+const lineCount = computed(() => {
+  return generatedSql.value ? generatedSql.value.split('\n').length : 0
+})
+
+const highlightedSql = computed(() => {
+  return highlightSql(generatedSql.value)
+})
+
+// Methods
 const selectFile = () => {
   fileInputRef.value?.click()
 }
 
-// 处理文件选择
 const handleFileChange = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      showToast('Please upload a valid Excel file', 'error')
+      return
+    }
     uploadedFile.value = file
   }
 }
 
-// 处理拖拽上传
 const handleDrop = (e: DragEvent) => {
   isDragover.value = false
   const file = e.dataTransfer?.files[0]
-  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+  if (file) {
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      showToast('Please upload a valid Excel file', 'error')
+      return
+    }
     uploadedFile.value = file
-  } else {
-    ElMessage.error('请上传 .xlsx 或 .xls 格式的文件')
   }
 }
 
-// 移除文件
 const removeFile = () => {
   uploadedFile.value = null
   if (fileInputRef.value) {
@@ -259,19 +260,9 @@ const removeFile = () => {
   }
 }
 
-// 格式化文件大小
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-// 生成 SQL
 const generateSql = async () => {
-  if (!uploadedFile.value) {
-    ElMessage.warning('请先上传 Excel 文件')
+  if (!uploadedFile.value || !form.value.tableName) {
+    showToast('Please complete all required fields', 'error')
     return
   }
 
@@ -285,129 +276,316 @@ const generateSql = async () => {
 
     const response = await sqlApi.generateSql(formData)
     generatedSql.value = response.data
-
-    ElMessage.success('SQL 生成成功！')
+    showToast('SQL generated successfully!', 'success')
   } catch (error) {
-    ElMessage.error('SQL 生成失败，请检查文件格式')
-    console.error(error)
+    showToast('Failed to generate SQL', 'error')
   } finally {
     loading.value = false
   }
 }
 
-// 复制 SQL
 const copySql = async () => {
   try {
     await navigator.clipboard.writeText(generatedSql.value)
-    ElMessage.success('已复制到剪贴板')
+    showToast('Copied to clipboard!', 'success')
   } catch {
-    ElMessage.error('复制失败')
+    showToast('Failed to copy', 'error')
   }
 }
 
-// 下载 SQL
 const downloadSql = () => {
   const blob = new Blob([generatedSql.value], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `${form.value.tableName}.sql`
+  link.download = `${form.value.tableName || 'table'}.sql`
   link.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('下载成功')
+  showToast('SQL file downloaded!', 'success')
 }
 
-// 下载模板
 const downloadTemplate = () => {
   window.location.href = sqlApi.downloadTemplate()
 }
 
-// SQL 语法高亮
+const reset = () => {
+  removeFile()
+  form.value.tableName = ''
+  form.value.tableRemark = ''
+  generatedSql.value = ''
+  form.value.database = 'mysql'
+}
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  toast.value = { show: true, message, type }
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
+}
+
 const highlightSql = (sql: string): string => {
   if (!sql) return ''
 
-  // 简单的语法高亮
   let highlighted = sql
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-  // 关键字高亮
-  const keywords = [
-    'CREATE', 'TABLE', 'DROP', 'IF', 'EXISTS', 'PRIMARY', 'KEY',
-    'NOT', 'NULL', 'DEFAULT', 'COMMENT', 'ON', 'COLUMN', 'ALTER',
-    'ADD', 'CONSTRAINT', 'FOREIGN', 'REFERENCES', 'UNIQUE', 'INDEX',
-    'INT', 'BIGINT', 'VARCHAR', 'TEXT', 'DATETIME', 'TIMESTAMP',
-    'DECIMAL', 'BOOLEAN', 'AUTO_INCREMENT', 'CHARSET', 'COLLATE'
-  ]
+  // Comments
+  highlighted = highlighted.replace(/(--[^\n]*)/g, '<span class="sql-comment">$1</span>')
+
+  // Strings
+  highlighted = highlighted.replace(/('([^']*)')/g, '<span class="sql-string">$1</span>')
+
+  // Keywords
+  const keywords = ['SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'ALTER', 'DROP', 'INDEX', 'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'UNIQUE', 'CONSTRAINT', 'DEFAULT', 'NOT', 'NULL', 'COMMENT', 'ON', 'COLUMN', 'ADD', 'CASCADE', 'RESTRICT', 'NO', 'ACTION', 'IF', 'EXISTS', 'OR', 'REPLACE', 'TRIGGER', 'BEFORE', 'EACH', 'ROW', 'BEGIN', 'END', 'SEQUENCE', 'START', 'WITH', 'INCREMENT', 'BY', 'NOCACHE', 'NOCYCLE', 'NEXTVAL', 'INTO', 'THEN', 'ELSE', 'DECLARE']
 
   keywords.forEach(keyword => {
-    const regex = new RegExp(`\\b(${keyword})\\b`, 'gi')
-    highlighted = highlighted.replace(regex, '<span class="sql-keyword">$1</span>')
+    const regex = new RegExp(`\\b${keyword}\\b`, 'gi')
+    highlighted = highlighted.replace(regex, '<span class="sql-keyword">$&</span>')
   })
 
-  // 字符串高亮
-  highlighted = highlighted.replace(/'([^']*)'/g, '<span class="sql-string">\'$1\'</span>')
+  // Data types
+  const types = ['INT', 'INTEGER', 'BIGINT', 'SMALLINT', 'TINYINT', 'DECIMAL', 'NUMERIC', 'VARCHAR', 'CHAR', 'TEXT', 'DATE', 'DATETIME', 'TIMESTAMP', 'BLOB', 'CLOB', 'BOOLEAN', 'FLOAT', 'DOUBLE', 'JSON', 'BYTEA', 'REAL', 'BIT', 'VARCHAR2', 'NUMBER', 'NCHAR', 'NVARCHAR', 'DATETIME2']
 
-  // 注释高亮
-  highlighted = highlighted.replace(/--(.*)$/gm, '<span class="sql-comment">--$1</span>')
+  types.forEach(type => {
+    const regex = new RegExp(`\\b${type}\\b`, 'gi')
+    highlighted = highlighted.replace(regex, '<span class="sql-type">$&</span>')
+  })
+
+  // Functions
+  const functions = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'CONCAT', 'COALESCE', 'NULLIF', 'CAST', 'CONVERT']
+
+  functions.forEach(func => {
+    const regex = new RegExp(`\\b${func}\\b`, 'gi')
+    highlighted = highlighted.replace(regex, '<span class="sql-function">$&</span>')
+  })
+
+  // Numbers
+  highlighted = highlighted.replace(/\b(\d+)\b/g, '<span class="sql-number">$1</span>')
 
   return highlighted
 }
+
+// Keyboard shortcuts
+const handleKeydown = (e: KeyboardEvent) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    generateSql()
+  }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+    copySql()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+  if (toastTimer) clearTimeout(toastTimer)
+})
 </script>
 
 <style scoped lang="scss">
 @use '@/styles/variables' as *;
 
-.sql-generator-page {
-  max-width: 1400px;
+.sql-generator {
+  min-height: 100vh;
+  position: relative;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-lg);
+}
+
+/* Background Effects */
+.bg-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    transparent 1px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 3px
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 1;
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 1600px;
   margin: 0 auto;
+  animation: slideDown 0.6s ease;
 }
 
-.page-header {
-  margin-bottom: var(--spacing-lg);
-
-  .page-title {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: var(--spacing-sm);
-    color: var(--text-primary);
-  }
-
-  .page-desc {
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-}
-
-.card-header {
+/* Header */
+.header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-default);
+  margin-bottom: var(--space-xl);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: var(--glow-blue);
+}
+
+.logo-text {
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--accent-green);
+  color: var(--bg-primary);
+  border-radius: var(--radius-sm);
   font-weight: 600;
 }
 
-.db-option {
+.header-actions {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--space-md);
 }
 
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  font-size: 16px;
+
+  &:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    box-shadow: var(--glow-blue);
+  }
+}
+
+/* Main Content */
+.main-content {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+/* Control Panel */
+.control-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  animation: slideLeft 0.6s ease 0.1s both;
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Upload Area */
 .upload-area {
   border: 2px dashed var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
+  background: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(88, 166, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
 
   &:hover,
-  &.is-dragover {
+  &.drag-over {
     border-color: var(--accent-blue);
-    background: rgba(88, 166, 255, 0.05);
+    background: var(--bg-elevated);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &.drag-over {
+    border-color: var(--accent-green);
+    background: rgba(63, 185, 80, 0.1);
+    animation: pulse 1s ease infinite;
   }
 
   &.has-file {
@@ -419,18 +597,26 @@ const highlightSql = (sql: string): string => {
 .upload-placeholder {
   .upload-icon {
     font-size: 48px;
-    color: var(--text-muted);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+    transition: all var(--transition-normal);
+  }
+
+  .upload-area:hover .upload-icon {
+    opacity: 1;
+    transform: scale(1.1);
   }
 
   .upload-text {
-    p {
-      margin: var(--spacing-xs) 0;
-      color: var(--text-primary);
+    font-size: 14px;
+    color: var(--text-secondary);
+
+    strong {
+      color: var(--accent-blue);
     }
 
-    .upload-hint {
-      font-size: 12px;
+    small {
+      font-size: 11px;
       color: var(--text-muted);
     }
   }
@@ -439,118 +625,433 @@ const highlightSql = (sql: string): string => {
 .file-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-
-  .file-icon {
-    font-size: 32px;
-    color: var(--accent-green);
-  }
-
-  .file-details {
-    flex: 1;
-    text-align: left;
-
-    .file-name {
-      font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: var(--spacing-xs);
-    }
-
-    .file-size {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-  }
-}
-
-.sql-result {
-  min-height: 400px;
-  max-height: 600px;
-  overflow: auto;
+  gap: var(--space-sm);
+  padding: var(--space-md);
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+}
 
-  &.is-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.file-icon {
+  font-size: 20px;
+}
+
+.file-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-remove {
+  color: var(--accent-red);
+  cursor: pointer;
+  font-size: 18px;
+
+  &:hover {
+    color: #ff6b6b;
+  }
+}
+
+/* Database Selector */
+.db-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.db-option {
+  padding: var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-elevated);
   }
 
-  .empty-state {
-    text-align: center;
+  &.selected {
+    border-color: var(--accent-green);
+    background: rgba(63, 185, 80, 0.1);
+    box-shadow: var(--glow-green);
+  }
+}
+
+.db-icon {
+  font-size: 24px;
+  opacity: 0.8;
+}
+
+.db-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.db-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.db-ver {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Input Group */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.input-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.input-field {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: var(--glow-blue);
+  }
+
+  &::placeholder {
     color: var(--text-muted);
-
-    .empty-icon {
-      font-size: 64px;
-      margin-bottom: var(--spacing-md);
-    }
-  }
-
-  .sql-content {
-    margin: 0;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--text-primary);
-
-    :deep(.sql-keyword) {
-      color: var(--syntax-keyword);
-      font-weight: 600;
-    }
-
-    :deep(.sql-string) {
-      color: var(--syntax-string);
-    }
-
-    :deep(.sql-comment) {
-      color: var(--syntax-comment);
-      font-style: italic;
-    }
   }
 }
 
-.help-card {
-  margin-top: var(--spacing-lg);
+/* Buttons */
+.btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
 
-  .help-content {
-    h4 {
-      font-size: 14px;
-      font-weight: 600;
-      margin: var(--spacing-md) 0 var(--spacing-sm);
-      color: var(--text-primary);
-    }
+.btn {
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
 
-    ul {
-      margin: 0;
-      padding-left: var(--spacing-lg);
-      color: var(--text-secondary);
-      font-size: 13px;
-      line-height: 1.8;
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  color: white;
+  box-shadow: var(--glow-blue);
 
-      li {
-        margin-bottom: var(--spacing-xs);
-      }
-    }
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(88, 166, 255, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
   }
 }
 
-// 滚动条样式
-.sql-result::-webkit-scrollbar {
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+
+  &:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+}
+
+.btn-full {
+  grid-column: 1 / -1;
+}
+
+/* Output Panel */
+.output-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideRight 0.6s ease 0.2s both;
+  min-height: 600px;
+}
+
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-default);
+  gap: var(--space-md);
+}
+
+.output-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.output-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.output-stats {
+  display: flex;
+  gap: var(--space-lg);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.stat-value {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.output-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Code Editor */
+.code-editor {
+  flex: 1;
+  background: var(--bg-primary);
+  padding: var(--space-lg);
+  overflow: auto;
+  position: relative;
+}
+
+.code-wrapper {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.line-numbers {
+  color: var(--text-muted);
+  user-select: none;
+  text-align: right;
+  min-width: 40px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.code-content {
+  flex: 1;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre;
+}
+
+// Syntax Highlighting
+:deep(.sql-keyword) { color: var(--accent-purple); }
+:deep(.sql-function) { color: var(--accent-blue); }
+:deep(.sql-string) { color: var(--accent-green); }
+:deep(.sql-number) { color: var(--accent-orange); }
+:deep(.sql-comment) { color: var(--text-muted); font-style: italic; }
+:deep(.sql-type) { color: var(--accent-cyan); }
+
+// Empty State
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: var(--space-md);
+}
+
+.empty-icon {
+  font-size: 64px;
+  opacity: 0.3;
+}
+
+.empty-text {
+  font-size: 14px;
+}
+
+// Loading State
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+// Toast
+.toast {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 300px;
+  z-index: 100;
+
+  &.success {
+    border-color: var(--accent-green);
+  }
+
+  &.error {
+    border-color: var(--accent-red);
+  }
+}
+
+.toast-icon {
+  font-size: 20px;
+
+  .success & { color: var(--accent-green); }
+  .error & { color: var(--accent-red); }
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 13px;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+// Animations
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .output-panel {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sql-generator {
+    padding: var(--space-md);
+  }
+
+  .db-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: flex-start;
+  }
+}
+
+// Scrollbar
+::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.sql-result::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-.sql-result::-webkit-scrollbar-thumb {
-  background: var(--bg-elevated);
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
   border-radius: var(--radius-sm);
 
   &:hover {
-    background: var(--border-default);
+    background: var(--text-muted);
   }
 }
 </style>
