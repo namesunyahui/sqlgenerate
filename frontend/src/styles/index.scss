@@ -2,7 +2,7 @@
  * 全局样式
  */
 
-@import './variables.scss';
+@use './variables' as *;
 
 * {
   margin: 0;
